@@ -1,0 +1,10 @@
+{
+  "name": "node-todo-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "David Ridgley",
+  "license": "MIT",
+  "dependencies": {
+    "mongodb": "^3.0.1"
+  }
+}
