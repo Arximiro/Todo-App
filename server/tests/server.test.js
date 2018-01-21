@@ -3,15 +3,20 @@ const request = require('supertest');
 
 const { app } = require('../server');
 const { Todo } = require('../models/todo');
+const testTodos = require('./fixtures/testTodos');
 
 beforeEach((done) => {
-    Todo.remove({}).then(() => done());
+    Todo.remove({}).then(() => {
+        return Todo.insertMany(testTodos);
+    }).then(() => done());
 });
+
+console.log(testTodos);
 
 describe('POST /todos', () => {
 
     it('should create a new todo', (done) => {
-        const text = 'Test todoss text';
+        const text = 'Test todo text';
 
         request(app)
             .post('/todos')
@@ -24,7 +29,7 @@ describe('POST /todos', () => {
                 if (err) {
                     done(err);
                 } else {
-                    Todo.find().then((todos) => {
+                    Todo.find({text}).then((todos) => {
                         expect(todos.length).toBe(1);
                         expect(todos[0].text).toBe(text)
                         done();
@@ -43,13 +48,25 @@ describe('POST /todos', () => {
                     done(err);
                 } else {
                     Todo.find().then((todos) => {
-                        expect(todos.length).toBe(0);
+                        expect(todos.length).toBe(3);
                         done();
                     }).catch((e) => done(e));
                 }
             });
     });
 
+});
+
+describe('GET /todos', () => {
+    it('should get all todos', (done) => {
+        request(app)
+        .get('/todos')
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.todos.length).toBe(3);
+        })
+        .end(done());
+    });
 });
 
 // --- POST Todos Notes ---
@@ -67,3 +84,7 @@ describe('POST /todos', () => {
 // In the 2nd POST todos test, invalid data is used in the form of an empty object.
 // The first assertion is that a status code 400 should be returned which is Bad Request.
 // Then at the end the last assertion is that the length of the todos collection is 0.
+
+
+// --- GET Todos Notes ---
+// In this test, all that's being done is fetching the todos from the collection and making sure the length of the returned array is correct.
