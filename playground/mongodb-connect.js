@@ -4,12 +4,12 @@ const {MongoClient, ObjectID} = require('mongodb');
 const obj = new ObjectID();
 console.log(`Random ID: ${obj}`);;
 
-MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
+MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, client) => {
     if (err) {
         console.log('Unable to connect to MongoDB server');
     } else {
         console.log('Connected to MongoDB server');
-        const myDb = db.db('TodoApp');
+        const myDb = client.db('TodoApp');
 
         myDb.collection('Todos').insertOne({
             text: 'Buy Groceries',
@@ -22,7 +22,7 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
             console.log(JSON.stringify(result.ops, undefined, 2));
         });
 
-        db.close();
+        client.close();
     }
 });
 
