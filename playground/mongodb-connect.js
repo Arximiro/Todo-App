@@ -47,3 +47,4 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
         // });
 
 // If the collection Users does not exist, this will create it and add the data to the user collection.
+// The ops attribute in result.ops stores all the documents that were inserted.
