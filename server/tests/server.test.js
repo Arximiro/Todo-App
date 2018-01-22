@@ -1,3 +1,4 @@
+const {ObjectID} = require('mongodb');
 const expect = require('expect');
 const request = require('supertest');
 
@@ -5,16 +6,14 @@ const { app } = require('../server');
 const { Todo } = require('../models/todo');
 const testTodos = require('./fixtures/testTodos');
 
+
 beforeEach((done) => {
     Todo.remove({}).then(() => {
         return Todo.insertMany(testTodos);
     }).then(() => done());
 });
 
-console.log(testTodos);
-
 describe('POST /todos', () => {
-
     it('should create a new todo', (done) => {
         const text = 'Test todo text';
 
@@ -29,7 +28,7 @@ describe('POST /todos', () => {
                 if (err) {
                     done(err);
                 } else {
-                    Todo.find({text}).then((todos) => {
+                    Todo.find({ text }).then((todos) => {
                         expect(todos.length).toBe(1);
                         expect(todos[0].text).toBe(text)
                         done();
@@ -60,12 +59,40 @@ describe('POST /todos', () => {
 describe('GET /todos', () => {
     it('should get all todos', (done) => {
         request(app)
-        .get('/todos')
+            .get('/todos')
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todos.length).toBe(3);
+            })
+            .end(done);
+    });
+});
+
+describe('GET /todos/:id', () => {
+    it('should get todo doc by id', (done) => {
+        request(app)
+        .get(`/todos/${testTodos[0]._id}`)
         .expect(200)
         .expect((res) => {
-            expect(res.body.todos.length).toBe(3);
+            expect(res.body.todo.text).toBe(testTodos[0].text);
         })
-        .end(done());
+        .end(done);
+    });
+
+    it('should return 404 if todo not found', (done) => {
+        const id = ObjectID();
+        request(app)
+        .get(`/todos/${id}`)
+        .expect(404)
+        .end(done);
+    });
+
+    it('should return 400 due to invalid id', (done) => {
+        const id = ObjectID();
+        request(app)
+        .get(`/todos/${id}12`)
+        .expect(400)
+        .end(done);
     });
 });
 
@@ -89,3 +116,9 @@ describe('GET /todos', () => {
 
 // --- GET Todos Notes ---
 // In this test, all that's being done is fetching the todos from the collection and making sure the length of the returned array is correct.
+
+// --- GET Todos/:id Notes ---
+// In these tests, data is being fetched from the collection based off the id.
+// The first test uses a legitimate _id from one of the text todos, making sure a 200 OK is returned.
+// The second test uses a properly formatted ObjectID to simulate an id being passed in that has the correct format, but is not found, returning a 404 not found.
+// The third test uses an intentionally improper id, making sure a 400 for bad request is returned.

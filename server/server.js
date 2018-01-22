@@ -32,19 +32,14 @@ app.get('/todos', (req, res) => {
 
 app.get('/todos/:id', (req, res) => {
     const id = req.params.id;
-
-    if (!ObjectID.isValid(id)) {
-        res.status(404).send();        
-    } else {
         Todo.findById(id).then((todo) => {
             if (!todo) {
-                res.status(404).send();
+                return res.status(404).send();    
             }
             res.send({todo});
         }).catch((e) => {
             res.status(400).send();
         });
-    }
 });
 
 app.listen(3000, () => {
@@ -66,3 +61,5 @@ module.exports = { app };
 // app.get does an HTTP GET request to the url.
 // Todo.find() returns all data from the collection.
 // In the returned promise then call, that data is sent to the user.
+// Instead of just sending todos, sending it like ({todos}) wrapping the array in an object allows for more flexibility.
+// Down the line you could add other properties to the object that gets sent to the user if desired.
