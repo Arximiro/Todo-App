@@ -1,4 +1,4 @@
-const {ObjectID} = require('mongodb');
+const { ObjectID } = require('mongodb');
 const expect = require('expect');
 const request = require('supertest');
 
@@ -26,14 +26,13 @@ describe('POST /todos', () => {
             })
             .end((err, res) => {
                 if (err) {
-                    done(err);
-                } else {
-                    Todo.find({ text }).then((todos) => {
-                        expect(todos.length).toBe(1);
-                        expect(todos[0].text).toBe(text)
-                        done();
-                    }).catch((e) => done(e));
+                    return done(err);
                 }
+                Todo.find({ text }).then((todos) => {
+                    expect(todos.length).toBe(1);
+                    expect(todos[0].text).toBe(text)
+                    done();
+                }).catch((e) => done(e));
             });
     });
 
@@ -70,29 +69,68 @@ describe('GET /todos', () => {
 
 describe('GET /todos/:id', () => {
     it('should get todo doc by id', (done) => {
+        const id = testTodos[0]._id.toHexString();
         request(app)
-        .get(`/todos/${testTodos[0]._id}`)
-        .expect(200)
-        .expect((res) => {
-            expect(res.body.todo.text).toBe(testTodos[0].text);
-        })
-        .end(done);
+            .get(`/todos/${id}`)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todo._id).toBe(id);
+            })
+            .end(done);
     });
 
     it('should return 404 if todo not found', (done) => {
         const id = ObjectID();
         request(app)
-        .get(`/todos/${id}`)
-        .expect(404)
-        .end(done);
+            .get(`/todos/${id}`)
+            .expect(404)
+            .end(done);
     });
 
     it('should return 400 due to invalid id', (done) => {
+        const id = '123abc';
+        request(app)
+            .get(`/todos/${id}`)
+            .expect(400)
+            .end(done);
+    });
+});
+
+describe('DELETE /todos/:id', () => {
+    it('should remove a todo', (done) => {
+        const id = testTodos[0]._id.toHexString();
+        request(app)
+            .delete(`/todos/${id}`)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todo._id).toBe(id);
+            })
+            .end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                Todo.findById(id).then((res) => {
+                    expect(res).toBeNull();
+                    done();
+                }).catch((e) => done(e));
+
+            });
+    });
+
+    it('should return 404 if todo not found', (done) => {
         const id = ObjectID();
         request(app)
-        .get(`/todos/${id}12`)
-        .expect(400)
-        .end(done);
+            .delete(`/todos/${id}`)
+            .expect(404)
+            .end(done);
+    });
+
+    it('should return 400 id invalid ID', (done) => {
+        const id = '123abc';
+        request(app)
+            .delete(`/todos/${id}`)
+            .expect(400)
+            .end(done);
     });
 });
 
@@ -118,7 +156,14 @@ describe('GET /todos/:id', () => {
 // In this test, all that's being done is fetching the todos from the collection and making sure the length of the returned array is correct.
 
 // --- GET Todos/:id Notes ---
-// In these tests, data is being fetched from the collection based off the id.
-// The first test uses a legitimate _id from one of the text todos, making sure a 200 OK is returned.
+// In these tests, data is being fetched from the collection based off the _id.
+// A const is created with a legit _id from one of the test todos, converted to a hex string which is an object, which we will need for comparison in expect.
+// The first test uses the legitimate _id from one of the text todos, making sure a 200 OK is returned. The returned todo's _id is compared with the one we meant to find.
 // The second test uses a properly formatted ObjectID to simulate an id being passed in that has the correct format, but is not found, returning a 404 not found.
 // The third test uses an intentionally improper id, making sure a 400 for bad request is returned.
+
+// --- DELETE Todos/:id Notes ---
+// In these tests, data is being deleted from the collection based off the _id.
+// A const is created with a legit _id from one of the test todos, converted to a hex string which is an object, which we will need for comparison in expect.
+// The first test attempts to delete a todo by the _id value. A valid _id from one of the test todos is passed in.
+// The second test passes in a properly formatted _id, but for a todo that does not exist.
