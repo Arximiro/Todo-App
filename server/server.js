@@ -1,6 +1,7 @@
 const { ObjectID } = require('mongodb');
 const express = require('express');
 const bodyParser = require('body-parser');
+const _ = require('lodash');
 
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
@@ -55,6 +56,28 @@ app.delete('/todos/:id', (req, res) => {
     });
 });
 
+app.patch('/todos/:id', (req, res) => {
+    const id = req.params.id;
+    const body = _.pick(req.body, ['text', 'completed']);
+
+    if(_.isBoolean(body.completed) && body.completed) {
+        body.completedAt = new Date().getTime();
+    } else {
+        body.completed = false;
+        body.completedAt = null;
+    }
+
+    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+        if (!todo) {
+            return res.status(404).send();
+        }
+
+        res.send({todo});
+    }).catch((e) => {
+        res.status(400).send();
+    })
+});
+
 app.listen(port, () => {
     console.log(`Started on port ${port}.`);
 });
@@ -76,3 +99,15 @@ module.exports = { app };
 // In the returned promise then call, that data is sent to the user.
 // Instead of just sending todos, sending it like ({todos}) wrapping the array in an object allows for more flexibility.
 // Down the line you could add other properties to the object that gets sent to the user if desired.
+
+// app.delete sends an HTTP DELETE request to the url.
+// Todo.findAndRemoveById() finds a todo by the _id and removes it.
+// The id that is used is pulled off req.params.id.
+
+// app.patch sends an HTTP PATCH request to the url.
+// Todo.findByIdAndUpdate() takes in an id, and also the updates, and also any options.
+// For this one the updates are created up above using lodash like this _.pick(req.body, ['text', 'completed']) Which creates an object with the update properties.
+// Next lodash is used again to check that the completed property of the request IS a boolean AND that it is true.
+// If so the completedAt date property is added to the object. If not both properties are set their default values and nothing is updated in the DB.
+// When Todo.findByIdAndUpdate() is used, the id is passed in, the object with the update properties and an object where a new prop is set to true
+// which makes sure that the object returned to the user is the new updated object.
