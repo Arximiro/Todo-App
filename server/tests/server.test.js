@@ -134,6 +134,38 @@ describe('DELETE /todos/:id', () => {
     });
 });
 
+describe('PATCH /todos/:id', () => {
+    it('should update the todo', (done) => {
+        const id = testTodos[0]._id.toHexString();
+        const body = { text: 'Updated todo', completed: true }
+        request(app)
+            .patch(`/todos/${id}`)
+            .send(body)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todo.text).toBe(body.text);
+                expect(res.body.todo.completed).toBe(true);
+                expect(res.body.todo.completedAt).toBeTruthy();
+            })
+            .end(done)
+    });
+
+    it('should clear completedAt when todo is not complete', (done) => {
+        const id = testTodos[1]._id.toHexString();
+        const body = { text: 'Updated todo#2', completed: false }
+        request(app)
+            .patch(`/todos/${id}`)
+            .send(body)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body.todo.text).toBe(body.text);
+                expect(res.body.todo.completed).toBe(false);
+                expect(res.body.todo.completedAt).toBe(null);
+            })
+            .end(done);
+    });
+});
+
 // --- POST Todos Notes ---
 // describe creates a block for the tests that describes what they do and shows in the output. It's not required but makes the tests look more organized.
 // it() is how mocha starts a test. The first argument is what the test should do, the second argument is the function that runs and the expect calls.
@@ -167,3 +199,9 @@ describe('DELETE /todos/:id', () => {
 // A const is created with a legit _id from one of the test todos, converted to a hex string which is an object, which we will need for comparison in expect.
 // The first test attempts to delete a todo by the _id value. A valid _id from one of the test todos is passed in.
 // The second test passes in a properly formatted _id, but for a todo that does not exist.
+
+// --- PATCH Todos/:id Notes ---
+// In the first test, some dummy data is created to update the todo. It is then sent to the url using send.
+// The return data is processed, making sure the data on the returned todo matches what was sent.
+// The second test updates a todo changing completed status to false.
+// Then it expects the returned todo to make sure completed was updated and completedAt was set back to its default value null.
