@@ -7,6 +7,7 @@ const _ = require('lodash');
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
+const { authenticate } = require('./middleware/authenticate');
 
 const app = express();
 const port = process.env.PORT;
@@ -61,19 +62,19 @@ app.patch('/todos/:id', (req, res) => {
     const id = req.params.id;
     const body = _.pick(req.body, ['text', 'completed']);
 
-    if(_.isBoolean(body.completed) && body.completed) {
+    if (_.isBoolean(body.completed) && body.completed) {
         body.completedAt = new Date().getTime();
     } else {
         body.completed = false;
         body.completedAt = null;
     }
 
-    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+    Todo.findByIdAndUpdate(id, { $set: body }, { new: true }).then((todo) => {
         if (!todo) {
             return res.status(404).send();
         }
 
-        res.send({todo});
+        res.send({ todo });
     }).catch((e) => {
         res.status(400).send();
     })
@@ -82,7 +83,7 @@ app.patch('/todos/:id', (req, res) => {
 app.post('/users', (req, res) => {
     const body = _.pick(req.body, ['email', 'password']);
     const user = new User(body);
-    
+
     user.save().then(() => {
         return user.generateAuthToken();
     }).then((token) => {
@@ -90,6 +91,10 @@ app.post('/users', (req, res) => {
     }).catch((e) => {
         res.status(400).send(e);
     });
+});
+
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
 });
 
 app.listen(port, () => {
