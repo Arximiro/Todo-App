@@ -4,14 +4,11 @@ const request = require('supertest');
 
 const { app } = require('../server');
 const { Todo } = require('../models/todo');
-const testTodos = require('./fixtures/testTodos');
+const { User } = require('../models/user');
+const {users, populateUsers, todos, populateTodos} = require('./seed/seed');
 
-
-beforeEach((done) => {
-    Todo.remove({}).then(() => {
-        return Todo.insertMany(testTodos);
-    }).then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', () => {
     it('should create a new todo', (done) => {
@@ -69,7 +66,7 @@ describe('GET /todos', () => {
 
 describe('GET /todos/:id', () => {
     it('should get todo doc by id', (done) => {
-        const id = testTodos[0]._id.toHexString();
+        const id = todos[0]._id.toHexString();
         request(app)
             .get(`/todos/${id}`)
             .expect(200)
@@ -98,7 +95,7 @@ describe('GET /todos/:id', () => {
 
 describe('DELETE /todos/:id', () => {
     it('should remove a todo', (done) => {
-        const id = testTodos[0]._id.toHexString();
+        const id = todos[0]._id.toHexString();
         request(app)
             .delete(`/todos/${id}`)
             .expect(200)
@@ -136,7 +133,7 @@ describe('DELETE /todos/:id', () => {
 
 describe('PATCH /todos/:id', () => {
     it('should update the todo', (done) => {
-        const id = testTodos[0]._id.toHexString();
+        const id = todos[0]._id.toHexString();
         const body = { text: 'Updated todo', completed: true }
         request(app)
             .patch(`/todos/${id}`)
@@ -151,7 +148,7 @@ describe('PATCH /todos/:id', () => {
     });
 
     it('should clear completedAt when todo is not complete', (done) => {
-        const id = testTodos[1]._id.toHexString();
+        const id = todos[1]._id.toHexString();
         const body = { text: 'Updated todo#2', completed: false }
         request(app)
             .patch(`/todos/${id}`)
@@ -163,6 +160,79 @@ describe('PATCH /todos/:id', () => {
                 expect(res.body.todo.completedAt).toBe(null);
             })
             .end(done);
+    });
+});
+
+describe('GET /users/me', () => {
+    it('should return user if authenticated', (done) => {
+     request(app)
+     .get('/users/me')
+     .set('x-auth', users[0].tokens[0].token)
+     .expect(200)
+     .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email);
+     })
+     .end(done);
+    });
+
+    it('should return 401 if not authenticated', (done) => {
+        request(app)
+        .get('/users/me')
+        .expect(401)
+        .expect((res) => {
+            expect(res.body).toEqual({});
+        })
+        .end(done);
+    });
+});
+
+describe('POST /users', () => {
+    it('should create a user', (done) => {
+        const email = 'test@test.com';
+        const password = 'abcd1234';
+
+        request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(200)
+        .expect((res) => {
+            expect(res.headers['x-auth']).toBeTruthy();
+            expect(res.body._id).toBeTruthy();
+            expect(res.body.email).toBe(email);
+        })
+        .end((err) => {
+            if (err) {
+                return done(err);
+            }
+            
+            User.findOne({email}).then((user) => {
+                expect(user).toBeTruthy();                
+                done();
+            });
+        });
+    });
+
+    it('should return validation errors for invalid request', (done) => {
+        const email = 'test@test';
+        const password = 'abcd';
+
+        request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done)
+    });
+
+    it('should not create user if email in use', (done) => {
+        const email = 'david@example.com';
+        const password = 'abcd1234';
+
+        request(app)
+        .post('/users')
+        .send({email, password})
+        .expect(400)
+        .end(done)
     });
 });
 
