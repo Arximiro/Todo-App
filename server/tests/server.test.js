@@ -169,9 +169,11 @@ describe('PATCH /todos/:id', () => {
 
 describe('GET /users/me', () => {
     it('should return user if authenticated', (done) => {
+        const token = users[0].tokens[0].token;
+        
         request(app)
             .get('/users/me')
-            .set('x-auth', users[0].tokens[0].token)
+            .set('x-auth', token)
             .expect(200)
             .expect((res) => {
                 expect(res.body._id).toBe(users[0]._id.toHexString());
@@ -344,6 +346,28 @@ describe('POST /users/login', () => {
                     done();
                 }).catch((e) => done(e));
             });
+    });
+});
+
+describe('DELETE /users/me/token', () => {
+    it('should remove auth token on logout', (done) => {
+        const _id = users[0]._id;
+        const token = users[0].tokens[0].token;
+
+        request(app)
+            .delete('/users/me/token')
+            .set('x-auth', token)
+            .expect(200)
+            .end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+
+                User.findById(_id).then((user) => {
+                    expect(user.tokens.length).toBe(0)
+                    done()
+                }).catch((e) => done(e));
+            })
     });
 });
 
