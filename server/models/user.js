@@ -52,6 +52,18 @@ UserSchema.methods.generateAuthToken = function () {
     });
 };
 
+// $pull searched the tokens array for an object that matches the token passed in
+// if a match is found that object is removed from the array.
+UserSchema.methods.removeToken = function (token) {
+    const user = this;
+
+    return user.update({
+        $pull: {
+            tokens: {token}
+        }
+    });
+};
+
 UserSchema.statics.findByToken = function (token) {
     const User = this;
     let decoded;
