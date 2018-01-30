@@ -69,6 +69,10 @@ UserSchema.statics.findByToken = function (token) {
     });
 };
 
+// Finds a user using credentials(email, password) and compares the entered password
+// and the hashed one saved in the database to see if they are a match.
+// bcrypt takes the email, sees if it's in the db, finds the user, gets the salt from their hashed pw, then hashes
+// the plain text pw entered using that salt to see if they match.
 UserSchema.statics.findByCredentials = function (email, password) {
     const User = this;
 
