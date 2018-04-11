@@ -30,7 +30,7 @@ if (!ObjectID.isValid(id)) {
 }
 
 // ObjectID method .isValid() is used to check that the structure of an id is the required format for an ObjectID.
-// Mongoose casts _id to ObjectID in the backgrouns so we don't have to explicitly make that cast in our code.
+// Mongoose casts _id to ObjectID in the background so we don't have to explicitly make that cast in our code.
 // The find() method returns all items in the collection matching the search criteria.
 // The findOne() method only finds and returns the first result matching the search criteria.
 // The findById() method searches for an item in the collection with an _id matching the one passed in. It's basically findOne just simpler.

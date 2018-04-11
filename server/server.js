@@ -44,11 +44,12 @@ app.get('/todos', authenticate, async (req, res) => {
 
 app.get('/todos/:id', authenticate, async (req, res) => {
   const id = req.params.id;
+  const uid = req.user._id;
 
   try {
     const todo = await Todo.findOne({
       _id: id,
-      _creator: req.user._id
+      _creator: uid
     });
     if (!todo) {
       return res.status(404).send();
@@ -61,11 +62,13 @@ app.get('/todos/:id', authenticate, async (req, res) => {
 });
 
 app.delete('/todos/:id', authenticate, async (req, res) => {
+  const id = req.params.id;
+  const uid = req.user._id;
+
   try {
-    const id = req.params.id;
     const todo = await Todo.findOneAndRemove({
       _id: id,
-      _creator: req.user._id
+      _creator: uid
     });
 
     if (!todo) {
@@ -80,6 +83,7 @@ app.delete('/todos/:id', authenticate, async (req, res) => {
 
 app.patch('/todos/:id', authenticate, async (req, res) => {
   const id = req.params.id;
+  const uid = req.user._id;
   const body = _.pick(req.body, ['text', 'completed']);
 
   if (_.isBoolean(body.completed) && body.completed) {
@@ -92,7 +96,7 @@ app.patch('/todos/:id', authenticate, async (req, res) => {
   try {
     const todo = await Todo.findOneAndUpdate({
       _id: id,
-      _creator: req.user._id
+      _creator: uid
     },
       { $set: body },
       { new: true });
@@ -105,13 +109,14 @@ app.patch('/todos/:id', authenticate, async (req, res) => {
   } catch (error) {
     res.status(400).send();
   }
-  
+
 });
 
 app.post('/users', async (req, res) => {
+  const body = _.pick(req.body, ['email', 'password']);
+  const user = new User(body);
+
   try {
-    const body = _.pick(req.body, ['email', 'password']);
-    const user = new User(body);
     await user.save();
     const token = await user.generateAuthToken();
     res.header('x-auth', token).send(user);
@@ -121,8 +126,9 @@ app.post('/users', async (req, res) => {
 });
 
 app.post('/users/login', async (req, res) => {
+  const body = _.pick(req.body, ['email', 'password']);
+
   try {
-    const body = _.pick(req.body, ['email', 'password']);
     const user = await User.findByCredentials(body.email, body.password)
     const token = await user.generateAuthToken();
     res.header('x-auth', token).send(user);
@@ -136,6 +142,7 @@ app.get('/users/me', authenticate, (req, res) => {
 });
 
 app.delete('/users/me/token', authenticate, async (req, res) => {
+  
   try {
     await req.user.removeToken(req.token)
     res.status(200).send();
