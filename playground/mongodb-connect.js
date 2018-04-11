@@ -11,15 +11,15 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, client) => {
         console.log('Connected to MongoDB server');
         const myDb = client.db('TodoApp');
 
-        myDb.collection('Todos').insertOne({
+        myDb.collection('todos').insertOne({
             text: 'Buy Groceries',
             completed: false
         }, (err, result) => {
             if (err) {
-                return console.log('Unable to insert todo', err);
+              console.log('Unable to insert todo', err);
+            } else {
+              console.log(JSON.stringify(result.ops, undefined, 2));
             }
-
-            console.log(JSON.stringify(result.ops, undefined, 2));
         });
 
         client.close();
